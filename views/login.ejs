@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Rubik:400,700'>
+  <link rel="stylesheet" href="css/styles1.css">
+  <link rel="icon" href="https://w7.pngwing.com/pngs/505/761/png-transparent-login-computer-icons-avatar-icon-monochrome-black-silhouette-thumbnail.png">
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div class="login-form">
+  <form action="/home" method="post">
+    <h1>Login</h1>
+    <div class="content">
+      <div class="input-field">
+        <input placeholder="Username" autocomplete="nope" required>
+      </div>
+      <div class="input-field">
+        <input type="password" placeholder="Password" autocomplete="new-password" required>
+      </div>
+      <a href="#" class="link">Forgot Your Password?</a>
+    </div>
+    
+    <div class="action">
+      <button>Register</button>
+      <button type="submit">Sign in</button>
+    </div>
+  </form>
+</div>
+<!-- partial -->
+  <script > 
+  let form = document.querySelecter('form');
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  return false;
+});</script>
+      
+
+
+
+
+
+
+    <%- include("partials/footer"); -%>
