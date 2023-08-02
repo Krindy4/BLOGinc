@@ -13,7 +13,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-mongoose.connect('mongodb://127.0.0.1:27017/joshu');
+mongoose.connect("mongodb+srv://krish:kaviya@blogs.jkftvh7.mongodb.net/bloginc",{useNewURLParser: true});
 const postSchema = {
 
   title: String,
@@ -107,6 +107,6 @@ app.get("/posts/:postId", function(req, res){
   })
   
 });
-app.listen(3000, function() {
+app.listen(process.env.PORT || 3000, function() {
   console.log("Server started on port 3000");
 });
