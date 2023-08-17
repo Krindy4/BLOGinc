@@ -95,7 +95,8 @@ body {
   transition: all .3s;
 }
 .login-form .action button:hover {
-  background: #d8d8d8;
+  background: #000000;
+  color: #ffffff;
 }
 .login-form .action button:nth-child(2) {
   background: #2d3b55;

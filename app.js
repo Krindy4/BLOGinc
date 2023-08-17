@@ -21,8 +21,12 @@ const postSchema = {
   content: String
  
  };
+ const userSchema = {
+  email : String ,
+  password : String
+ };
 const Post = mongoose.model("Post", postSchema);
-
+const User = new mongoose.model("User",userSchema);
 
 
 
@@ -30,14 +34,19 @@ const Post = mongoose.model("Post", postSchema);
 app.get("/", function(req, res) {
   res.render("list");
   
-})
-app.get("/about",function(req,res){
-  res.render("about");
-})
-app.post("/log",function(req,res){
-  res.render("login")
 });
-app.post("/home",function(req,res){
+
+//HOME ROUTE//
+app.route("/home")
+.get(function(req,res){
+  Post.find({}).then(function(posts){
+    res.render("home", {
+      posts : posts
+      });
+      
+  });  
+})
+.post(function(req,res){
   Post.find({}).then(function(posts){
     res.render("home", {
       posts : posts
@@ -45,45 +54,61 @@ app.post("/home",function(req,res){
   });
 });
 
-  app.get("/home",function(req,res){
-    Post.find({}).then(function(posts){
-      res.render("home", {
-        posts : posts
-        });
-        
-    });  });
-  
 
-  app.get("/about", function(req, res){
-    res.render("about");
-  });
-  
-  app.get("/contact", function(req, res){
-    res.render("contact");
-  });
-  
-  app.get("/compose", function(req, res){
-    res.render("compose");
-  });
-  app.get("/log",function(req,res){
-    let us = req.body.uname;
-    let ps = req.body.psw;
-    const user = "krish";
-    const pass = "krishnan";
-    console.log(pass);
-    console.log(ps);
-    if(us === user && ps === pass ){
-      res.redirect("/home");
-    }else{
-      console.log("Wrong credentials");
-    }
+//REGISTER ROUTE//
+app.route("/register")
+.get(function(req,res){
+  res.render("register");
+})
+.post(function(req,res){
+  const newUser = new User({
+    email : req.body.username ,
+    password : req.body.password
+});
+newUser.save()
+.then(()=> res.redirect("/home"))
+.catch((err)=> console.log(err))
+});
 
+//LOG ROUTE//
+app.route("/log")
+.get(function(req,res){
+    
     res.render("login");
-  });
-  app.post("/log",function(req,res){
-   
   })
-  app.post("/compose", function(req, res){
+  .post(function(req,res){
+    const username = req.body.username;
+  
+    const password = req.body.password;
+   
+     
+        User.findOne({ email: username })
+        .then((user) => {
+          if (!user) {
+            console.log("User doesn't exists at all.");
+            res.redirect("/login");
+          }
+     
+          if (user.password === password) {
+            res.redirect("/home");
+            console.log("User Exists!");
+          } else {
+            res.redirect("/")
+            console.log("Password entered is wrong!");
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+  });
+  
+
+//COMPOSE ROUTE//
+app.route("/compose")
+.get(function(req, res){
+  res.render("compose");
+})
+.post(function(req, res){
   
     const post = new Post ({
       title: req.body.postTitle,
@@ -107,6 +132,17 @@ app.get("/posts/:postId", function(req, res){
   })
   
 });
-app.listen(process.env.PORT || 3000, function() {
+
+app.get("/about",function(req,res){
+  res.render("about");
+});
+app.get("/contact", function(req, res){
+  res.render("contact");
+});
+
+
+
+
+app.listen(process.env.PORT || 5000, function() {
   console.log("Server started on port 3000");
 });
