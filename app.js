@@ -1,11 +1,13 @@
 //jshint esversion:6
-
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
 const _ = require("lodash");
-
+const session = require("express-session");
+const passport = require("passport");
+const passportLocalMongoose = require("passport-local-mongoose");
 const app = express();
 
 app.set('view engine', 'ejs');
@@ -13,7 +15,17 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
+app.use(session({
+  secret : "Our little secret.",
+  resave : false,
+  saveUninitialized : false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 mongoose.connect("mongodb+srv://krish:kaviya@blogs.jkftvh7.mongodb.net/bloginc",{useNewURLParser: true});
+
 const postSchema = {
 
   title: String,
@@ -21,14 +33,20 @@ const postSchema = {
   content: String
  
  };
- const userSchema = {
-  email : String ,
+ const userSchema = new mongoose.Schema({
+  email : String,
   password : String
- };
+  
+});
+
+userSchema.plugin(passportLocalMongoose);
+
 const Post = mongoose.model("Post", postSchema);
 const User = new mongoose.model("User",userSchema);
 
-
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 
 app.get("/", function(req, res) {
@@ -39,12 +57,17 @@ app.get("/", function(req, res) {
 //HOME ROUTE//
 app.route("/home")
 .get(function(req,res){
+ if(req.isAuthenticated()){
   Post.find({}).then(function(posts){
     res.render("home", {
       posts : posts
       });
+  })
+ }else{
+  res.redirect("/log");
+ }
       
-  });  
+   
 })
 .post(function(req,res){
   Post.find({}).then(function(posts){
@@ -61,13 +84,16 @@ app.route("/register")
   res.render("register");
 })
 .post(function(req,res){
-  const newUser = new User({
-    email : req.body.username ,
-    password : req.body.password
-});
-newUser.save()
-.then(()=> res.redirect("/home"))
-.catch((err)=> console.log(err))
+  User.register({username : req.body.username}, req.body.password,function(err,user){
+    if(err){
+      console.log(err);
+      res.redirect("/register");
+    }else{
+      passport.authenticate("local")(req,res,function(){
+        res.redirect("/home");
+      })
+    }
+  });
 });
 
 //LOG ROUTE//
@@ -77,29 +103,20 @@ app.route("/log")
     res.render("login");
   })
   .post(function(req,res){
-    const username = req.body.username;
-  
-    const password = req.body.password;
-   
-     
-        User.findOne({ email: username })
-        .then((user) => {
-          if (!user) {
-            console.log("User doesn't exists at all.");
-            res.redirect("/login");
-          }
-     
-          if (user.password === password) {
-            res.redirect("/home");
-            console.log("User Exists!");
-          } else {
-            res.redirect("/")
-            console.log("Password entered is wrong!");
-          }
-        })
-        .catch((err) => {
-          console.log(err);
+    const user = new User({
+      username : req.body.username,
+      password : req.body.password
+    });
+    req.login(user,function(err){
+      if(err){
+        console.log(err);
+        res.redirect("/");
+      }else{
+        passport.authenticate("local")(req,res,function(){
+          res.redirect("/home");
         });
+      }
+    });
   });
   
 
@@ -132,6 +149,15 @@ app.get("/posts/:postId", function(req, res){
   })
   
 });
+
+
+app.get("/logout",function(req,res){
+  req.logout(function(err){
+    if(err){console.log(err)};
+  });
+  res.redirect("/");
+});
+
 
 app.get("/about",function(req,res){
   res.render("about");
