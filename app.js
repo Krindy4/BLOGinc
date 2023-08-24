@@ -8,6 +8,12 @@ const _ = require("lodash");
 const session = require("express-session");
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
+const GoogleStrategy = require( 'passport-google-oauth20' ).Strategy;
+const findOrCreate = require("mongoose-findOrCreate");
+
+
+
+
 const app = express();
 
 app.set('view engine', 'ejs');
@@ -35,24 +41,69 @@ const postSchema = {
  };
  const userSchema = new mongoose.Schema({
   email : String,
-  password : String
-  
+  password : String,
+  googleId : String
+
 });
 
 userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 
 const Post = mongoose.model("Post", postSchema);
 const User = new mongoose.model("User",userSchema);
 
 passport.use(User.createStrategy());
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+passport.serializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, {
+      id: user.id,
+      username: user.username,
+      picture: user.picture
+    });
+  });
+});
+
+passport.deserializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, user);
+  });
+});
+
+
+passport.use(new GoogleStrategy({
+  clientID:     process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  callbackURL: "https://blogcom-inc.onrender.com/auth/google/home",
+  userProfileURL : " https://www.googleapis.com/oauth2/v3/userinfo",
+  passReqToCallback   : true
+},
+function(request, accessToken, refreshToken, profile, done) {
+  // console.log(profile)
+  User.findOrCreate({ googleId: profile.id }, function (err, user) {
+    return done(err, user);
+  });
+}
+));
+
+
 
 
 app.get("/", function(req, res) {
   res.render("list");
   
 });
+
+app.get("/auth/google",
+  passport.authenticate('google', { scope: ["profile"] }));
+app.get("/auth/google/home", 
+  passport.authenticate('google', { failureRedirect: '/log' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/home');
+  });
+
+
+
 
 //HOME ROUTE//
 app.route("/home")
@@ -170,5 +221,5 @@ app.get("/contact", function(req, res){
 
 
 app.listen(process.env.PORT || 5000, function() {
-  console.log("Server started on port 3000");
+  console.log("Server started on port 5000");
 });
