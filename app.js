@@ -95,6 +95,8 @@ app.get("/", function(req, res) {
 
 app.get("/auth/google",
   passport.authenticate('google', { scope: ["profile"] }));
+//The above code is to enough to bring up the pop up that lets you log in into your google account
+/*  The next two lines are for when we get back from google and have a response */
 app.get("/auth/google/home", 
   passport.authenticate('google', { failureRedirect: '/log' }),
   function(req, res) {
